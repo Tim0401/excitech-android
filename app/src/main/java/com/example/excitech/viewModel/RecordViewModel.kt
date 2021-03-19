@@ -1,6 +1,5 @@
 package com.example.excitech.viewModel
 
-import android.R.attr.delay
 import android.annotation.SuppressLint
 import android.app.Application
 import android.media.MediaRecorder
@@ -19,8 +18,8 @@ class RecordViewModel(application: Application) : AndroidViewModel(application) 
     var isRecordingLiveData: MutableLiveData<Boolean> = MutableLiveData(false)
     var recordingDurationLiveData: MutableLiveData<Int> = MutableLiveData(0)
 
-    private val timer = Timer()
-    private var fileName: String = "aaa.wav"
+    private var timer = Timer()
+    private var fileName: String = UUID.randomUUID().toString()
     private var recorder: MediaRecorder? = null
     @SuppressLint("StaticFieldLeak")
     private val context = getApplication<Application>().applicationContext
@@ -37,9 +36,10 @@ class RecordViewModel(application: Application) : AndroidViewModel(application) 
 
     private fun startRecording() {
         recorder = MediaRecorder().apply {
+            fileName = UUID.randomUUID().toString()
             setAudioSource(MediaRecorder.AudioSource.MIC)
             setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP)
-            setOutputFile(context.filesDir.path + '/' +fileName)
+            setOutputFile(context.filesDir.path + '/' + fileName + ".3gp")
             setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB)
 
             Log.d(LOG_TAG,context.filesDir.path + '/' +fileName)
@@ -52,6 +52,7 @@ class RecordViewModel(application: Application) : AndroidViewModel(application) 
 
             start()
 
+            timer = Timer()
             timer.scheduleAtFixedRate(object : TimerTask() {
                 override fun run() {
                     recordingDurationLiveData.postValue(recordingDurationLiveData.value!! + 1)

@@ -26,6 +26,10 @@ https://qiita.com/naoi/items/29c16746fa0fe9e8355d
 
 https://qiita.com/nakker1218/items/271760a2cfa90e41fb4e  
 
+### File
+
+https://thr3a.hatenablog.com/entry/20130902/1378107379  
+
 ### tmux
 
 https://qiita.com/nmrmsys/items/03f97f5eabec18a3a18b  
