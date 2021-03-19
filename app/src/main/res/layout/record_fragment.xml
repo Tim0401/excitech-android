@@ -25,11 +25,22 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="00:00:00"
-        android:textSize="48sp"
         android:textColor="#ffffff"
+        android:textSize="48sp"
         app:layout_constraintBottom_toTopOf="@+id/recordButton"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/button_show_list"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Show List"
+        android:onClick="list"
+        app:layout_constraintBottom_toBottomOf="@+id/recordButton"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/recordButton"
+        app:layout_constraintTop_toTopOf="@+id/recordButton" />
 </androidx.constraintlayout.widget.ConstraintLayout>
 
