@@ -50,8 +50,7 @@ class RecordFragment : Fragment() {
         viewModel = ViewModelProvider(this, RecordViewModel.Factory(
             requireActivity().application
         )).get(RecordViewModel::class.java)
-        // TODO: Use the ViewModel
-        viewModel.isRecordingLiveData.observe(viewLifecycleOwner, Observer { isRecording ->
+        viewModel.isRecordingLiveData.observe(viewLifecycleOwner, { isRecording ->
             isRecording?.let {
                 if (it) {
                     recordButton.setImageResource(R.drawable.stop)
@@ -61,7 +60,7 @@ class RecordFragment : Fragment() {
             }
         })
 
-        viewModel.recordingDurationLiveData.observe(viewLifecycleOwner, Observer { duration ->
+        viewModel.recordingDurationLiveData.observe(viewLifecycleOwner, { duration ->
             duration?.let {
                 val hour = duration / (60 * 60)
                 val minute = duration / 60
@@ -74,7 +73,7 @@ class RecordFragment : Fragment() {
 
     @NeedsPermission(Manifest.permission.RECORD_AUDIO)
     fun recordSound(){
-        viewModel.onRecord();
+        viewModel.onRecord()
     }
 
 }
