@@ -21,6 +21,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun show(audio: Audio) {
+        val projectFragment = PlayerFragment.forAudio(audio.name) //詳細のFragment
+        supportFragmentManager
+            .beginTransaction()
+            .addToBackStack("audio")
+            .replace(R.id.fragment_container, projectFragment, null)
+            .commit()
     }
 
     fun list(view: View) {
