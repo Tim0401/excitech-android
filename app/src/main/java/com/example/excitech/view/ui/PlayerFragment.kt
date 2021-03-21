@@ -11,6 +11,7 @@ import androidx.lifecycle.Observer
 import com.example.excitech.R
 import com.example.excitech.databinding.PlayerFragmentBinding
 import com.example.excitech.viewModel.PlayerViewModel
+import com.google.android.exoplayer2.ui.PlayerView
 
 class PlayerFragment : Fragment() {
 
@@ -37,10 +38,12 @@ class PlayerFragment : Fragment() {
     }
 
     private lateinit var binding: PlayerFragmentBinding
+    private lateinit var playerView: PlayerView
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
                               savedInstanceState: Bundle?): View? {
         binding = DataBindingUtil.inflate(inflater, R.layout.player_fragment, container, false)
+        playerView = binding.root.findViewById(R.id.videoView)
         return binding.root
     }
 
@@ -54,6 +57,12 @@ class PlayerFragment : Fragment() {
         viewModel.audioLiveData.observe(viewLifecycleOwner, Observer { audio ->
             audio?.let {
                 viewModel.setAudio(it)
+            }
+        })
+
+        viewModel.playerLiveData.observe(viewLifecycleOwner, Observer { player ->
+            player?.let {
+                playerView.player = player
             }
         })
     }

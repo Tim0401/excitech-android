@@ -31,6 +31,11 @@ https://qiita.com/nakker1218/items/271760a2cfa90e41fb4e
 https://thr3a.hatenablog.com/entry/20130902/1378107379  
 https://maku77.github.io/kotlin/collection/create-sequence.html  
 
+### ExoPlayer
+
+https://qiita.com/niusounds/items/cce4ff69f5911908259b  
+https://gumiossan.hatenablog.com/entry/2020/03/06/002802  
+
 ### tmux
 
 https://qiita.com/nmrmsys/items/03f97f5eabec18a3a18b  

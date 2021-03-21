@@ -8,6 +8,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import com.google.android.exoplayer2.SimpleExoPlayer
 import java.io.IOException
 import java.util.*
 
@@ -73,6 +74,7 @@ class RecordViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     class Factory(private val application: Application) : ViewModelProvider.NewInstanceFactory() {
+        @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             return RecordViewModel(application) as T
         }

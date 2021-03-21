@@ -7,6 +7,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.example.excitech.service.model.Audio
+import com.google.android.exoplayer2.SimpleExoPlayer
 import kotlinx.coroutines.launch
 import java.io.File
 import java.text.SimpleDateFormat

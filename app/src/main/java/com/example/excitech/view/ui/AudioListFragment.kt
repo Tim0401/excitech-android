@@ -43,8 +43,8 @@ class AudioListFragment : Fragment() {
         return binding.root
     }
 
-    override fun onActivityCreated(savedInstanceState: Bundle?) {
-        super.onActivityCreated(savedInstanceState)
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
         viewModel = ViewModelProvider(this).get(AudioListViewModel::class.java)
         viewModel.audioListLiveData.observe(viewLifecycleOwner, Observer { projects ->
             projects?.let {

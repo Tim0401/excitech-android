@@ -29,7 +29,7 @@ class MainActivity : AppCompatActivity() {
             .commit()
     }
 
-    fun list(view: View) {
+    fun list(@Suppress("UNUSED_PARAMETER") view: View) {
         val audioListFragment = AudioListFragment()
         supportFragmentManager
             .beginTransaction()

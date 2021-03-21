@@ -45,8 +45,8 @@ class RecordFragment : Fragment() {
         return view
     }
 
-    override fun onActivityCreated(savedInstanceState: Bundle?) {
-        super.onActivityCreated(savedInstanceState)
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
         viewModel = ViewModelProvider(this, RecordViewModel.Factory(
             requireActivity().application
         )).get(RecordViewModel::class.java)
@@ -71,6 +71,7 @@ class RecordFragment : Fragment() {
             }
         })
     }
+
     @NeedsPermission(Manifest.permission.RECORD_AUDIO)
     fun recordSound(){
         viewModel.onRecord();
