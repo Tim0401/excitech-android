@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.app.Application
 import android.media.MediaRecorder
 import android.util.Log
+import androidx.annotation.MainThread
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -25,12 +26,22 @@ class RecordViewModel(application: Application) : AndroidViewModel(application) 
     @SuppressLint("StaticFieldLeak")
     private val context = getApplication<Application>().applicationContext
 
+    // TODO: onRecord レコード関連のイベントとしか分からない
+    // startOrStopRecordingとかの名前がいい 何がやるのか決まっている場合 具体的な名前
+
+    // もしかしたら警告がでるかもなアノテーション
+    @MainThread
     fun onRecord() {
         if(isRecordingLiveData.value == true){
             isRecordingLiveData.postValue(false)
             stopRecording()
         } else {
+            // メインスレッド以外から呼ばれるとき
             isRecordingLiveData.postValue(true)
+
+            // UIスレッド上であるなら早い
+            // isRecordingLiveData.value = true
+
             startRecording()
         }
     }

@@ -13,13 +13,17 @@ import com.google.android.exoplayer2.SimpleExoPlayer
 import com.google.android.exoplayer2.source.MediaSource
 import com.google.android.exoplayer2.source.ProgressiveMediaSource
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 
 class PlayerViewModel(application: Application, private val audioId: String) : AndroidViewModel(application) {
+    // シリアライズ可能
     val audioLiveData: MutableLiveData<Audio> = MutableLiveData()
+    // シリアライズできない->どうするか？
     val playerLiveData: MutableLiveData<SimpleExoPlayer> = MutableLiveData()
     var audio = ObservableField<Audio>()
 
@@ -35,9 +39,13 @@ class PlayerViewModel(application: Application, private val audioId: String) : A
             val filePath = context.filesDir.path + '/' + audioId
             val file = File(context.filesDir.path, audioId)
 
-            val mmr = MediaMetadataRetriever()
-            mmr.setDataSource(filePath)
-            val durationMs = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLong() ?: 0
+            // 別スレッドで実行 コルーチン
+            val durationMs =  withContext(Dispatchers.IO) {
+                val mmr = MediaMetadataRetriever()
+                mmr.setDataSource(filePath)
+                mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLong() ?: 0
+            }
+            // メインスレッドで残りを実行
             val duration = durationMs / 1000
             val h = duration / 3600
             val m = (duration - h * 3600) / 60
@@ -52,7 +60,12 @@ class PlayerViewModel(application: Application, private val audioId: String) : A
                 setMediaSource(source)
                 prepare()
             }
+
+            // TODO: PlauerのLivedataを渡すのは危ない
+            // 普通のインスタンスとして持って呼ぶ方がいい
             playerLiveData.postValue(exoPlayer)
+
+            // onPauseのタイミングでplayerのpauseを呼ぶとかする
 
         } catch (e: Exception) {
             Log.e("loadProject:Failed", e.stackTrace.toString())

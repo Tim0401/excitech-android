@@ -62,6 +62,7 @@ class RecordFragment : Fragment() {
 
         viewModel.recordingDurationLiveData.observe(viewLifecycleOwner, { duration ->
             duration?.let {
+                // TODO viewModelで表示データ生成
                 val hour = duration / (60 * 60)
                 val minute = duration / 60
                 val second = duration % 60
