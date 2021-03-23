@@ -1,5 +1,6 @@
 package com.example.excitech.view.ui
 
+import android.app.Application
 import androidx.lifecycle.ViewModelProvider
 import android.os.Bundle
 import androidx.fragment.app.Fragment
@@ -7,12 +8,17 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.databinding.DataBindingUtil
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
 import com.example.excitech.R
 import com.example.excitech.databinding.PlayerFragmentBinding
 import com.example.excitech.viewModel.PlayerViewModel
+import com.example.excitech.viewModel.RecordViewModel
 import com.google.android.exoplayer2.ui.PlayerView
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class PlayerFragment : Fragment() {
 
     companion object {
@@ -31,10 +37,10 @@ class PlayerFragment : Fragment() {
         }
     }
 
-    private val viewModel by lazy {
-        ViewModelProvider(this, PlayerViewModel.Factory(
-                requireActivity().application, audioId
-        )).get(PlayerViewModel::class.java)
+    @Inject
+    lateinit var playerViewModelAssistedFactory: PlayerViewModel.AssistedFactory
+    private val viewModel: PlayerViewModel by viewModels {
+        PlayerViewModel.provideFactory(playerViewModelAssistedFactory, audioId)
     }
 
     private lateinit var binding: PlayerFragmentBinding
@@ -54,15 +60,17 @@ class PlayerFragment : Fragment() {
             playerViewModel = viewModel
         }
 
-        viewModel.audioLiveData.observe(viewLifecycleOwner, Observer { audio ->
+        viewModel.audioLiveData.observe(viewLifecycleOwner, { audio ->
             audio?.let {
                 viewModel.setAudio(it)
             }
         })
 
-        viewModel.playerLiveData.observe(viewLifecycleOwner, Observer { player ->
-            player?.let {
-                playerView.player = player
+        viewModel.initPlayerLiveData.observe(viewLifecycleOwner, {  isInitialized ->
+            isInitialized?.let {
+                if(isInitialized){
+                    playerView.player = viewModel.getPlayer()
+                }
             }
         })
     }

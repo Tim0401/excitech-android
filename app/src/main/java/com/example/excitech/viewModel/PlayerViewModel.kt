@@ -13,18 +13,30 @@ import com.google.android.exoplayer2.SimpleExoPlayer
 import com.google.android.exoplayer2.source.MediaSource
 import com.google.android.exoplayer2.source.ProgressiveMediaSource
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory
+import dagger.Module
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
+import dagger.hilt.InstallIn
+import dagger.hilt.android.components.FragmentComponent
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
+import javax.inject.Inject
 
-class PlayerViewModel(application: Application, private val audioId: String) : AndroidViewModel(application) {
+
+class PlayerViewModel @AssistedInject constructor(application: Application, @Assisted private val audioId: String) : AndroidViewModel(application) {
     // シリアライズ可能
     val audioLiveData: MutableLiveData<Audio> = MutableLiveData()
+    val initPlayerLiveData: MutableLiveData<Boolean> = MutableLiveData(false)
     // シリアライズできない->どうするか？
-    val playerLiveData: MutableLiveData<SimpleExoPlayer> = MutableLiveData()
+    private lateinit var player: SimpleExoPlayer
     var audio = ObservableField<Audio>()
 
     @SuppressLint("StaticFieldLeak")
@@ -32,6 +44,23 @@ class PlayerViewModel(application: Application, private val audioId: String) : A
 
     init {
         loadAudio()
+    }
+
+    @dagger.assisted.AssistedFactory
+    interface AssistedFactory {
+        fun create(audioId: String): PlayerViewModel
+    }
+
+    companion object {
+        fun provideFactory(
+            assistedFactory: AssistedFactory,
+            audioId: String
+        ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
+            override fun <T : ViewModel?> create(modelClass: Class<T>): T {
+                @Suppress("UNCHECKED_CAST")
+                return assistedFactory.create(audioId) as T
+            }
+        }
     }
 
     private fun loadAudio() = viewModelScope.launch { //onCleared() のタイミングでキャンセルされる
@@ -55,17 +84,15 @@ class PlayerViewModel(application: Application, private val audioId: String) : A
             audioLiveData.postValue(Audio(audioId, durationText, SimpleDateFormat("yyyy/MM/dd HH:mm:ss", Locale.JAPAN).format(file.lastModified())))
 
             val source = buildMediaSource(filePath)
-            val exoPlayer = SimpleExoPlayer.Builder(context).build().apply {
+            player = SimpleExoPlayer.Builder(context).build().apply {
                 playWhenReady = playWhenReady
                 setMediaSource(source)
                 prepare()
             }
 
-            // TODO: PlauerのLivedataを渡すのは危ない
-            // 普通のインスタンスとして持って呼ぶ方がいい
-            playerLiveData.postValue(exoPlayer)
+            initPlayerLiveData.postValue(true)
 
-            // onPauseのタイミングでplayerのpauseを呼ぶとかする
+            // TODO: onPauseのタイミングでplayerのpauseを呼ぶとかする
 
         } catch (e: Exception) {
             Log.e("loadProject:Failed", e.stackTrace.toString())
@@ -77,16 +104,14 @@ class PlayerViewModel(application: Application, private val audioId: String) : A
         this.audio.set(audio)
     }
 
+    fun getPlayer(): SimpleExoPlayer {
+        return player
+    }
+
     private fun buildMediaSource(filePath: String): MediaSource {
         val dataSourceFactory = DefaultDataSourceFactory(context, "exoplayer-sample-app")
         val mediaItem = MediaItem.fromUri(filePath)
         return ProgressiveMediaSource.Factory(dataSourceFactory).createMediaSource(mediaItem)
     }
 
-    class Factory(private val application: Application, private val soundId: String) : ViewModelProvider.NewInstanceFactory() {
-        @Suppress("UNCHECKED_CAST")
-        override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return PlayerViewModel(application, soundId) as T
-        }
-    }
 }

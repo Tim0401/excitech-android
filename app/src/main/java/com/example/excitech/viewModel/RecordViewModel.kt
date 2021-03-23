@@ -5,7 +5,6 @@ import android.app.Application
 import android.media.MediaRecorder
 import android.util.Log
 import androidx.annotation.MainThread
-import androidx.hilt.lifecycle.ViewModelInject
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -22,34 +21,31 @@ private const val LOG_TAG = "AudioRecordTest"
 @HiltViewModel
 class RecordViewModel @Inject constructor(application: Application) : AndroidViewModel(application) {
     var isRecordingLiveData: MutableLiveData<Boolean> = MutableLiveData(false)
-    var recordingDurationLiveData: MutableLiveData<Int> = MutableLiveData(0)
+    var recordingDurationLiveData: MutableLiveData<String> = MutableLiveData(initialDurationText)
 
+    companion object {
+        const val initialDurationText = "00:00:00"
+    }
     private var timer = Timer()
+    private var duration = 0
     private var fileName: String = UUID.randomUUID().toString()
     private var recorder: MediaRecorder? = null
     @SuppressLint("StaticFieldLeak")
     private val context = getApplication<Application>().applicationContext
 
-    // TODO: onRecord レコード関連のイベントとしか分からない
-    // startOrStopRecordingとかの名前がいい 何がやるのか決まっている場合 具体的な名前
-
-    // もしかしたら警告がでるかもなアノテーション
     @MainThread
-    fun onRecord() {
+    fun startOrStopRecording() {
         if(isRecordingLiveData.value == true){
-            isRecordingLiveData.postValue(false)
+            // UIスレッド上であるなら早い メインスレッド以外から呼ばれるときはpostValue
+            isRecordingLiveData.value = false
             stopRecording()
         } else {
-            // メインスレッド以外から呼ばれるとき
-            isRecordingLiveData.postValue(true)
-
-            // UIスレッド上であるなら早い
-            // isRecordingLiveData.value = true
-
+            isRecordingLiveData.value = true
             startRecording()
         }
     }
 
+    @MainThread
     private fun startRecording() {
         recorder = MediaRecorder().apply {
             fileName = UUID.randomUUID().toString()
@@ -69,14 +65,20 @@ class RecordViewModel @Inject constructor(application: Application) : AndroidVie
             start()
 
             timer = Timer()
+            duration = 0
             timer.scheduleAtFixedRate(object : TimerTask() {
                 override fun run() {
-                    recordingDurationLiveData.postValue(recordingDurationLiveData.value!! + 1)
+                    duration++
+                    val hour = duration / (60 * 60)
+                    val minute = duration / 60
+                    val second = duration % 60
+                    recordingDurationLiveData.postValue("%02d:%02d:%02d".format(hour, minute, second))
                 }
             }, 1000, 1000)
         }
     }
 
+    @MainThread
     private fun stopRecording() {
         recorder?.apply {
             stop()
@@ -84,7 +86,7 @@ class RecordViewModel @Inject constructor(application: Application) : AndroidVie
             release()
         }
         timer.cancel()
-        recordingDurationLiveData.postValue(0)
+        recordingDurationLiveData.value = initialDurationText
         recorder = null
     }
 

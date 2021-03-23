@@ -60,13 +60,9 @@ class RecordFragment : Fragment() {
             }
         })
 
-        viewModel.recordingDurationLiveData.observe(viewLifecycleOwner, { duration ->
-            duration?.let {
-                // TODO viewModelで表示データ生成
-                val hour = duration / (60 * 60)
-                val minute = duration / 60
-                val second = duration % 60
-                recordingDuration.text = "%02d:%02d:%02d".format(hour, minute, second)
+        viewModel.recordingDurationLiveData.observe(viewLifecycleOwner, { durationText ->
+            durationText?.let {
+                recordingDuration.text = durationText
 
             }
         })
@@ -74,7 +70,7 @@ class RecordFragment : Fragment() {
 
     @NeedsPermission(Manifest.permission.RECORD_AUDIO)
     fun recordSound(){
-        viewModel.onRecord()
+        viewModel.startOrStopRecording()
     }
 
 }

@@ -50,7 +50,18 @@ https://qiita.com/sudachi808/items/8e03503f52b4f11533a2
 ### Hilt
 https://dagger.dev/hilt/view-model.html  
 https://aakira.app/blog/2020/05/dagger-hilt/  
-https://qiita.com/takahirom/items/17349916359a4481cbed
+https://qiita.com/takahirom/items/17349916359a4481cbed  
+https://qiita.com/takahirom/items/36f658b01d1d121b3760  
+https://stackoverflow.com/questions/65280323/how-to-pass-runtime-parameters-to-a-viewmodels-constructor-when-using-hilt-for  
+https://github.com/google/dagger/issues/2287  
+
+### Livedata/observer/(Shared)Flow
+
+https://engawapg.net/android/44/  
+https://qiita.com/que9/items/4c93197c4e4de10e483e  
+https://qiita.com/kyanro@github/items/e153246b9d84428441e0  
+https://dev.classmethod.jp/articles/android-mediatorlivedata-mvvm/  
+
 
 ### tmux
 

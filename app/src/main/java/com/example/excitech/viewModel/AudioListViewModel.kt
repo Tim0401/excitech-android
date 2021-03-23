@@ -8,13 +8,15 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.example.excitech.service.model.Audio
 import com.google.android.exoplayer2.SimpleExoPlayer
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
+import javax.inject.Inject
 
-
-class AudioListViewModel(application: Application) : AndroidViewModel(application) {
+@HiltViewModel
+class AudioListViewModel @Inject constructor(application: Application) : AndroidViewModel(application) {
     var audioListLiveData: MutableLiveData<List<Audio>> = MutableLiveData()
     @SuppressLint("StaticFieldLeak")
     private val context = getApplication<Application>().applicationContext

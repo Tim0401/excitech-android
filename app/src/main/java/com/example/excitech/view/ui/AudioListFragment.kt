@@ -7,6 +7,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.databinding.DataBindingUtil
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.Observer
 import com.example.excitech.R
@@ -17,14 +18,16 @@ import com.example.excitech.view.adapter.AudioAdapter
 import com.example.excitech.view.callback.AudioClickCallback
 import com.example.excitech.viewModel.AudioListViewModel
 import com.example.excitech.viewModel.RecordViewModel
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class AudioListFragment : Fragment() {
 
     companion object {
         fun newInstance() = AudioListFragment()
     }
 
-    private lateinit var viewModel: AudioListViewModel
+    private val viewModel: AudioListViewModel by viewModels()
     private lateinit var binding: AudioListFragmentBinding
     private val audioAdapter: AudioAdapter = AudioAdapter(object : AudioClickCallback {
         override fun onClick(audio: Audio) {
@@ -45,7 +48,6 @@ class AudioListFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        viewModel = ViewModelProvider(this).get(AudioListViewModel::class.java)
         viewModel.audioListLiveData.observe(viewLifecycleOwner, Observer { projects ->
             projects?.let {
                 audioAdapter.setAudioList(it)
