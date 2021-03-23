@@ -3,6 +3,14 @@
 音声録音再生アプリ  
 https://techbowl.co.jp/techtrain/missions/23  
 
+## TODO
+
+独自UIの作成  
+ローカルの連続再生  
+バッググラウンド再生  
+10秒飛ばし  
+スライダー  
+
 ## 参考URL
 
 ### 設計
