@@ -5,7 +5,9 @@ import android.os.Bundle
 import android.view.View
 import com.example.excitech.R
 import com.example.excitech.service.model.Audio
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

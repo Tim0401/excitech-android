@@ -36,6 +36,22 @@ https://maku77.github.io/kotlin/collection/create-sequence.html
 https://qiita.com/niusounds/items/cce4ff69f5911908259b  
 https://gumiossan.hatenablog.com/entry/2020/03/06/002802  
 
+### Coroutines
+
+https://qiita.com/iTakahiro/items/e39533b7fc07573a14da  
+
+### Dagger(Koin)
+
+https://satoshun.github.io/2018/12/dagger_with_viewmodel/  
+https://qiita.com/iTakahiro/items/c9203f5ad886b7ddae2f  
+https://qiita.com/sudachi808/items/a05237e1294639ea41dd  
+https://qiita.com/sudachi808/items/8e03503f52b4f11533a2  
+
+### Hilt
+https://dagger.dev/hilt/view-model.html  
+https://aakira.app/blog/2020/05/dagger-hilt/  
+https://qiita.com/takahirom/items/17349916359a4481cbed
+
 ### tmux
 
 https://qiita.com/nmrmsys/items/03f97f5eabec18a3a18b  

@@ -5,18 +5,22 @@ import android.app.Application
 import android.media.MediaRecorder
 import android.util.Log
 import androidx.annotation.MainThread
+import androidx.hilt.lifecycle.ViewModelInject
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.google.android.exoplayer2.SimpleExoPlayer
+import dagger.hilt.android.lifecycle.HiltViewModel
 import java.io.IOException
 import java.util.*
+import javax.inject.Inject
 
 
 private const val LOG_TAG = "AudioRecordTest"
 
-class RecordViewModel(application: Application) : AndroidViewModel(application) {
+@HiltViewModel
+class RecordViewModel @Inject constructor(application: Application) : AndroidViewModel(application) {
     var isRecordingLiveData: MutableLiveData<Boolean> = MutableLiveData(false)
     var recordingDurationLiveData: MutableLiveData<Int> = MutableLiveData(0)
 

@@ -3,6 +3,9 @@ plugins {
     id 'kotlin-android'
 }
 
+apply plugin: 'kotlin-kapt'
+apply plugin: 'dagger.hilt.android.plugin'
+
 android {
     compileSdkVersion 30
     buildToolsVersion "30.0.3"
@@ -34,7 +37,6 @@ android {
     }
     buildFeatures {
         dataBinding = true
-
     }
 }
 
@@ -59,13 +61,21 @@ dependencies {
     androidTestImplementation 'androidx.test.ext:junit:1.1.2'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
 
+    // permissionsdispatcher
     implementation "org.permissionsdispatcher:permissionsdispatcher:4.8.0"
     kapt "org.permissionsdispatcher:permissionsdispatcher-processor:4.8.0"
 
+    // exoplayer
     implementation 'com.google.android.exoplayer:exoplayer-core:2.13.2'
     implementation 'com.google.android.exoplayer:exoplayer-dash:2.13.2'
     implementation 'com.google.android.exoplayer:exoplayer-hls:2.13.2'
     implementation 'com.google.android.exoplayer:exoplayer-smoothstreaming:2.13.2'
     implementation 'com.google.android.exoplayer:exoplayer-ui:2.13.2'
+
+    // hilt
+    implementation 'com.google.dagger:hilt-android:2.31-alpha'
+    kapt 'com.google.dagger:hilt-android-compiler:2.31-alpha'
+    implementation 'androidx.hilt:hilt-lifecycle-viewmodel:1.0.0-alpha03'
+    kapt 'androidx.hilt:hilt-compiler:1.0.0-beta01'
 
 }
