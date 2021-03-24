@@ -47,8 +47,9 @@ class PlayerFragment : Fragment() {
     private lateinit var playerView: PlayerView
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
-                              savedInstanceState: Bundle?): View? {
+                              savedInstanceState: Bundle?): View {
         binding = DataBindingUtil.inflate(inflater, R.layout.player_fragment, container, false)
+        binding.lifecycleOwner = viewLifecycleOwner
         playerView = binding.root.findViewById(R.id.videoView)
         return binding.root
     }
@@ -61,9 +62,7 @@ class PlayerFragment : Fragment() {
         }
 
         viewModel.audioLiveData.observe(viewLifecycleOwner, { audio ->
-            audio?.let {
-                viewModel.setAudio(it)
-            }
+            audio?.let {}
         })
 
         viewModel.initPlayerLiveData.observe(viewLifecycleOwner, {  isInitialized ->

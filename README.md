@@ -5,11 +5,7 @@ https://techbowl.co.jp/techtrain/missions/23
 
 ## TODO
 
-独自UIの作成  
-ローカルの連続再生  
-バッググラウンド再生  
-10秒飛ばし  
-スライダー  
+バッググラウンド再生
 
 ## 参考URL
 
@@ -68,7 +64,8 @@ https://github.com/google/dagger/issues/2287
 https://engawapg.net/android/44/  
 https://qiita.com/que9/items/4c93197c4e4de10e483e  
 https://qiita.com/kyanro@github/items/e153246b9d84428441e0  
-https://dev.classmethod.jp/articles/android-mediatorlivedata-mvvm/  
+https://dev.classmethod.jp/articles/android-mediatorlivedata-mvvm/
+https://qiita.com/zigenin/items/389246e5ad87a9d5ff61
 
 
 ### tmux
