@@ -67,6 +67,9 @@ https://qiita.com/kyanro@github/items/e153246b9d84428441e0
 https://dev.classmethod.jp/articles/android-mediatorlivedata-mvvm/
 https://qiita.com/zigenin/items/389246e5ad87a9d5ff61
 
+### background/mediaSession
+
+https://qiita.com/siy1121/items/f01167186a6677c22435
 
 ### tmux
 
