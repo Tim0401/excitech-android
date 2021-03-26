@@ -9,8 +9,7 @@ import android.content.Intent
 import android.graphics.Color
 import android.media.AudioManager
 import android.media.AudioManager.OnAudioFocusChangeListener
-import android.media.MediaMetadata.METADATA_KEY_ARTIST
-import android.media.MediaMetadata.METADATA_KEY_TITLE
+import android.media.MediaMetadata.*
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -185,6 +184,7 @@ class MusicService : MediaBrowserServiceCompat() {
             mSession.setMetadata(MediaMetadataCompat.Builder()
                     .putString(android.media.MediaMetadata.METADATA_KEY_TITLE, mediaId)
                     .putString(android.media.MediaMetadata.METADATA_KEY_ARTIST, mediaId)
+                    .putString(METADATA_KEY_MEDIA_ID, mediaId)
                     .build())
         }
 

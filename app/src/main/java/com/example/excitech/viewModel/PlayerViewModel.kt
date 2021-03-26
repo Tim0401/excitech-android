@@ -125,23 +125,25 @@ class PlayerViewModel @AssistedInject constructor(application: Application, @Ass
         override fun onMetadataChanged(metadata: MediaMetadataCompat) {
             // change UI
             viewModelScope.launch {
-                val file = File(filePath)
-                // 別スレッドで実行 コルーチン
-                val durationMs = withContext(Dispatchers.IO) {
-                    getDurationMs(filePath)
+                metadata.description.mediaId?.let {
+                    val file = File(it)
+                    // 別スレッドで実行 コルーチン
+                    val durationMs = withContext(Dispatchers.IO) {
+                        getDurationMs(it)
+                    }
+                    // 再生しているデータを渡す
+                    audioLiveData.postValue(
+                            Audio(
+                                    file.name,
+                                    file.absolutePath,
+                                    getDurationText(durationMs),
+                                    SimpleDateFormat(
+                                            "yyyy/MM/dd HH:mm:ss",
+                                            Locale.JAPAN
+                                    ).format(file.lastModified())
+                            )
+                    )
                 }
-                // 再生しているデータを渡す
-                audioLiveData.postValue(
-                        Audio(
-                                file.name,
-                                file.absolutePath,
-                                getDurationText(durationMs),
-                                SimpleDateFormat(
-                                        "yyyy/MM/dd HH:mm:ss",
-                                        Locale.JAPAN
-                                ).format(file.lastModified())
-                        )
-                )
             }
         }
 
