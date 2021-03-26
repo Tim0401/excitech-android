@@ -1,17 +1,26 @@
 package com.example.excitech.view.ui
 
 import android.app.Application
+import android.content.ComponentName
+import android.content.Intent
 import androidx.lifecycle.ViewModelProvider
 import android.os.Bundle
+import android.os.RemoteException
+import android.support.v4.media.MediaBrowserCompat
+import android.support.v4.media.MediaMetadataCompat
+import android.support.v4.media.session.MediaControllerCompat
+import android.support.v4.media.session.PlaybackStateCompat
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
 import com.example.excitech.R
 import com.example.excitech.databinding.PlayerFragmentBinding
+import com.example.excitech.service.MusicService
 import com.example.excitech.viewModel.PlayerViewModel
 import com.example.excitech.viewModel.RecordViewModel
 import com.google.android.exoplayer2.ui.PlayerView
@@ -56,22 +65,12 @@ class PlayerFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
+        viewModel.loadAudio()
         binding.apply {
             playerViewModel = viewModel
         }
-
         viewModel.audioLiveData.observe(viewLifecycleOwner, { audio ->
             audio?.let {}
         })
-
-        viewModel.initPlayerLiveData.observe(viewLifecycleOwner, {  isInitialized ->
-            isInitialized?.let {
-                if(isInitialized){
-                    playerView.player = viewModel.getPlayer()
-                }
-            }
-        })
     }
-
 }

@@ -21,6 +21,7 @@ import android.support.v4.media.session.MediaControllerCompat
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import android.util.Log
+import android.util.Log.DEBUG
 import android.view.KeyEvent
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
@@ -39,23 +40,25 @@ import java.io.File
 
 class MusicService : MediaBrowserServiceCompat() {
 
-    val TAG = MusicService::class.java.simpleName //ログ用タグ
+    //ログ用タグ
+    val TAG = MusicService::class.java.simpleName
 
-    val ROOT_ID = "root" //クライアントに返すID onGetRoot / onLoadChildrenで使用
+    //クライアントに返すID onGetRoot / onLoadChildrenで使用
+    val ROOT_ID = "root"
 
-    var handler //定期的に処理を回すためのHandler
-            : Handler? = null
+    //定期的に処理を回すためのHandler
+    var handler: Handler? = null
 
     lateinit var mSession: MediaSessionCompat
     lateinit var am : AudioManager
 
     var index = 0 //再生中のインデックス
 
-
     lateinit var exoPlayer: SimpleExoPlayer
 
-    var queueItems: MutableList<MediaSessionCompat.QueueItem> = ArrayList() //キューに使用するリスト
-
+    //キューに使用するリスト
+    var queueItems: MutableList<MediaSessionCompat.QueueItem> = ArrayList()
+    // 再生リスト
     var mediaItems: MutableList<MediaBrowserCompat.MediaItem> = ArrayList()
 
 
@@ -65,16 +68,18 @@ class MusicService : MediaBrowserServiceCompat() {
     }
 
     override fun onLoadChildren(parentId: String, result: Result<MutableList<MediaBrowserCompat.MediaItem>>) {
-        if (parentId == ROOT_ID) //曲のリストをクライアントに送信
-            result.sendResult(mediaItems) else  //今回はROOT_ID以外は無効
+        //曲のリストをクライアントに送信
+        //今回はROOT_ID以外は無効
+        if (parentId == ROOT_ID) {
+            result.sendResult(mediaItems)
+        } else {
             result.sendResult(ArrayList<MediaBrowserCompat.MediaItem>())
+        }
     }
 
-    override fun onCreate() {
-        super.onCreate()
-
-        val files = applicationContext.filesDir.listFiles()?.filter { it.isFile && it.name.endsWith(".3gp") } ?: listOf<File>()
-
+    private fun createMediaItems(files :List<File>) {
+        // 再生対象ファイルの読み込み
+        // MediaItem配列の作成
         mediaItems = files.map{
             val mediaDescriptionCompat = MediaDescriptionCompat.Builder().apply {
                 setTitle(it.name)
@@ -83,8 +88,34 @@ class MusicService : MediaBrowserServiceCompat() {
             }.build()
             MediaBrowserCompat.MediaItem(mediaDescriptionCompat, MediaBrowserCompat.MediaItem.FLAG_PLAYABLE)
         }.toMutableList()
+    }
 
+    private fun createQueue() {
+        //キューにアイテムを追加
+        queueItems.clear()
+        for ((i, media) in mediaItems.withIndex()) {
+            queueItems.add(MediaSessionCompat.QueueItem(media.description, i.toLong()))
+        }
+        //WearやAutoにキューが表示される
+        mSession.setQueue(queueItems)
+    }
 
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        // ファイルからMediaItems作成
+        val files = applicationContext.filesDir.listFiles()?.filter { it.isFile && it.name.endsWith(".3gp") } ?: listOf<File>()
+        createMediaItems(files)
+
+        // キューの作成
+        createQueue()
+        return START_NOT_STICKY
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+
+        // ファイルからMediaItems作成
+        val files = applicationContext.filesDir.listFiles()?.filter { it.isFile && it.name.endsWith(".3gp") } ?: listOf<File>()
+        createMediaItems(files)
 
         //AudioManagerを取得
         am = getSystemService(Context.AUDIO_SERVICE) as AudioManager
@@ -113,16 +144,11 @@ class MusicService : MediaBrowserServiceCompat() {
             }
         })
 
-
-        //キューにアイテムを追加
-        for ((i, media) in mediaItems.withIndex()) {
-            queueItems.add(MediaSessionCompat.QueueItem(media.description, i.toLong()))
-        }
-        mSession.setQueue(queueItems) //WearやAutoにキューが表示される
-
+        // キューの作成
+        createQueue()
 
         //exoPlayerの初期化
-        exoPlayer = ExoPlayerFactory.newSimpleInstance(applicationContext, DefaultTrackSelector())
+        exoPlayer = SimpleExoPlayer.Builder(applicationContext).build()
         //プレイヤーのイベントリスナーを設定
         exoPlayer.addListener(eventListener)
         handler = Handler()
@@ -130,7 +156,7 @@ class MusicService : MediaBrowserServiceCompat() {
         handler!!.postDelayed(object : Runnable {
             override fun run() {
                 //再生中にアップデート
-                if (exoPlayer.getPlaybackState() == Player.STATE_READY && exoPlayer.getPlayWhenReady()) UpdatePlaybackState()
+                if (exoPlayer.getPlaybackState() == Player.STATE_READY && exoPlayer.getPlayWhenReady()) updatePlaybackState()
 
                 //再度実行
                 handler!!.postDelayed(this, 500)
@@ -143,10 +169,9 @@ class MusicService : MediaBrowserServiceCompat() {
         //曲のIDから再生する
         //WearやAutoのブラウジング画面から曲が選択された場合もここが呼ばれる
         override fun onPlayFromMediaId(mediaId: String, extras: Bundle) {
-            //今回はAssetsフォルダに含まれる音声ファイルを再生
+
             //Uriから再生する
             val dataSourceFactory: DataSource.Factory = DefaultDataSourceFactory(applicationContext, Util.getUserAgent(applicationContext, "AppName"))
-            val files = applicationContext.filesDir.listFiles()?.filter { it.isFile && it.name.endsWith(".3gp") } ?: listOf<File>()
             val mediaSource: MediaSource = ProgressiveMediaSource.Factory(dataSourceFactory).createMediaSource(MediaItem.fromUri(mediaId))
 
             //今回は簡易的にmediaIdからインデックスを割り出す。
@@ -158,8 +183,8 @@ class MusicService : MediaBrowserServiceCompat() {
 
             //MediaSessionが配信する、再生中の曲の情報を設定
             mSession.setMetadata(MediaMetadataCompat.Builder()
-                    .putString(android.media.MediaMetadata.METADATA_KEY_TITLE, "TEST TITLE")
-                    .putString(android.media.MediaMetadata.METADATA_KEY_ARTIST, "TEST ARTIST")
+                    .putString(android.media.MediaMetadata.METADATA_KEY_TITLE, mediaId)
+                    .putString(android.media.MediaMetadata.METADATA_KEY_ARTIST, mediaId)
                     .build())
         }
 
@@ -228,14 +253,13 @@ class MusicService : MediaBrowserServiceCompat() {
     private val eventListener: Player.EventListener = object : DefaultEventListener() {
         //プレイヤーのステータスが変化した時に呼ばれる
         override fun onPlayerStateChanged(playWhenReady: Boolean, playbackState: Int) {
-            UpdatePlaybackState()
-            // createNotification()
+            updatePlaybackState()
         }
     }
 
     //MediaSessionが配信する、現在のプレイヤーの状態を設定する
     //ここには再生位置の情報も含まれるので定期的に更新する
-    private fun UpdatePlaybackState() {
+    private fun updatePlaybackState() {
         var state = PlaybackStateCompat.STATE_NONE
         when (exoPlayer.playbackState) {
             Player.STATE_IDLE -> state = PlaybackStateCompat.STATE_NONE
@@ -245,7 +269,7 @@ class MusicService : MediaBrowserServiceCompat() {
         }
 
         //プレイヤーの情報、現在の再生位置などを設定する
-        //また、MeidaButtonIntentでできる操作を設定する
+        //また、MediaButtonIntentでできる操作を設定する
         mSession.setPlaybackState(PlaybackStateCompat.Builder()
                 .setActions(PlaybackStateCompat.ACTION_PLAY or PlaybackStateCompat.ACTION_PAUSE or PlaybackStateCompat.ACTION_SKIP_TO_NEXT or PlaybackStateCompat.ACTION_STOP)
                 .setState(state, exoPlayer.currentPosition, exoPlayer.playbackParameters.speed)
@@ -284,6 +308,8 @@ class MusicService : MediaBrowserServiceCompat() {
                 .setStyle(androidx.media.app.NotificationCompat.MediaStyle()
                         .setMediaSession(mSession.sessionToken) //通知を小さくたたんだ時に表示されるコントロールのインデックスを設定
                         .setShowActionsInCompactView(1))
+                .setOnlyAlertOnce(true)
+                .setSound(null)
 
         // Android4.4以前は通知をスワイプで消せないので
         //キャンセルボタンを表示することで対処
@@ -341,9 +367,11 @@ class MusicService : MediaBrowserServiceCompat() {
     @RequiresApi(Build.VERSION_CODES.O)
     private fun createNotificationChannel(channelId: String, channelName: String): String{
         val chan = NotificationChannel(channelId,
-                channelName, NotificationManager.IMPORTANCE_NONE)
-        chan.lightColor = Color.BLUE
-        chan.lockscreenVisibility = Notification.VISIBILITY_PRIVATE
+                channelName, NotificationManager.IMPORTANCE_LOW).apply {
+            setSound(null, null)
+            lightColor = Color.BLUE
+            lockscreenVisibility = Notification.VISIBILITY_PRIVATE
+        }
         val service = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         service.createNotificationChannel(chan)
         return channelId

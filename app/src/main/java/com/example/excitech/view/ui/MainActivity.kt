@@ -20,21 +20,9 @@ import dagger.hilt.android.AndroidEntryPoint
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
 
-    lateinit var mBrowser: MediaBrowserCompat
-    lateinit var mController: MediaControllerCompat
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
-        //サービスは開始しておく
-        //Activity破棄と同時にServiceも停止して良いならこれは不要
-        startService(Intent(this, MusicService::class.java))
-
-        //MediaBrowserを初期化
-        mBrowser = MediaBrowserCompat(this, ComponentName(this, MusicService::class.java), connectionCallback, null)
-        //接続(サービスをバインド)
-        mBrowser.connect()
 
         if (savedInstanceState == null) {
             val fragment = RecordFragment() //一覧のFragment
@@ -61,55 +49,5 @@ class MainActivity : AppCompatActivity() {
             .addToBackStack("audio")
             .replace(R.id.fragment_container, audioListFragment, null)
             .commit()
-    }
-
-    //接続時に呼び出されるコールバック
-    private val connectionCallback: MediaBrowserCompat.ConnectionCallback = object : MediaBrowserCompat.ConnectionCallback() {
-        override fun onConnected() {
-            try {
-                //接続が完了するとSessionTokenが取得できるので
-                //それを利用してMediaControllerを作成
-                mController = MediaControllerCompat(this@MainActivity, mBrowser.sessionToken)
-                //サービスから送られてくるプレイヤーの状態や曲の情報が変更された際のコールバックを設定
-                mController.registerCallback(controllerCallback)
-
-                //既に再生中だった場合コールバックを自ら呼び出してUIを更新
-                if (mController.playbackState != null && mController.playbackState.state == PlaybackStateCompat.STATE_PLAYING) {
-                    controllerCallback.onMetadataChanged(mController.metadata)
-                    controllerCallback.onPlaybackStateChanged(mController.playbackState)
-                }
-            } catch (ex: RemoteException) {
-                ex.printStackTrace()
-                Toast.makeText(this@MainActivity, ex.message, Toast.LENGTH_LONG).show()
-            }
-            //サービスから再生可能な曲のリストを取得
-            mBrowser.subscribe(mBrowser.root, subscriptionCallback)
-        }
-    }
-    private fun play(id: String) {
-        //MediaControllerからサービスへ操作を要求するためのTransportControlを取得する
-        //playFromMediaIdを呼び出すと、サービス側のMediaSessionのコールバック内のonPlayFromMediaIdが呼ばれる
-        mController.transportControls.playFromMediaId(id, null)
-    }
-
-    //Subscribeした際に呼び出されるコールバック
-    private val subscriptionCallback: MediaBrowserCompat.SubscriptionCallback = object : MediaBrowserCompat.SubscriptionCallback() {
-        override fun onChildrenLoaded(parentId: String, children: List<MediaBrowserCompat.MediaItem>) {
-            //既に再生中でなければ初めの曲を再生をリクエスト
-            if (mController.playbackState == null && children.isNotEmpty()) children[0].mediaId?.let { play(it) }
-        }
-    }
-
-    //MediaControllerのコールバック
-    private val controllerCallback: MediaControllerCompat.Callback = object : MediaControllerCompat.Callback() {
-        //再生中の曲の情報が変更された際に呼び出される
-        override fun onMetadataChanged(metadata: MediaMetadataCompat) {
-            // TODO: change UI
-        }
-
-        //プレイヤーの状態が変更された時に呼び出される
-        override fun onPlaybackStateChanged(state: PlaybackStateCompat) {
-            // TODO: change UI
-        }
     }
 }

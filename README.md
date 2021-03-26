@@ -5,7 +5,9 @@ https://techbowl.co.jp/techtrain/missions/23
 
 ## TODO
 
-バッググラウンド再生
+バッググラウンド再生  
+画面回転時の挙動確認  
+独自UI実装  
 
 ## 参考URL
 

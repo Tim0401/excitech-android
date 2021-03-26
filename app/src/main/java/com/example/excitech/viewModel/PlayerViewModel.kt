@@ -2,11 +2,20 @@ package com.example.excitech.viewModel
 
 import android.annotation.SuppressLint
 import android.app.Application
+import android.content.ComponentName
+import android.content.Intent
 import android.media.MediaMetadataRetriever
+import android.os.RemoteException
+import android.support.v4.media.MediaBrowserCompat
+import android.support.v4.media.MediaMetadataCompat
+import android.support.v4.media.session.MediaControllerCompat
+import android.support.v4.media.session.PlaybackStateCompat
 import android.util.Log
+import android.widget.Toast
 import androidx.annotation.Nullable
 import androidx.databinding.ObservableField
 import androidx.lifecycle.*
+import com.example.excitech.service.MusicService
 import com.example.excitech.service.model.Audio
 import com.google.android.exoplayer2.ExoPlaybackException
 import com.google.android.exoplayer2.MediaItem
@@ -29,46 +38,16 @@ import java.util.*
 class PlayerViewModel @AssistedInject constructor(application: Application, @Assisted private val audioId: String) : AndroidViewModel(application) {
     // シリアライズ可能
     val audioLiveData: MutableLiveData<Audio> = MutableLiveData()
-    val initPlayerLiveData: MutableLiveData<Boolean> = MutableLiveData(false)
-    private lateinit var player: SimpleExoPlayer
 
-    // 再生する音声が変わったときのイベント
-    private val playerEventListener = object : Player.EventListener {
-        override fun onMediaItemTransition(
-                @Nullable mediaItem: MediaItem?, @MediaItemTransitionReason reason: Int) {
-            viewModelScope.launch {
-                // duration取得
-                val filePath = mediaItem?.mediaId
-                var durationMs: Long = 0
-                val file = filePath?.let{
-                    val file = File(filePath)
-                    // 別スレッドで実行 コルーチン
-                    durationMs = withContext(Dispatchers.IO) {
-                        getDurationMs(filePath)
-                    }
-                    return@let file
-                }
-
-                // 再生しているデータを渡す
-                audioLiveData.postValue(
-                    Audio(
-                        file?.name ?: "",
-                        getDurationText(durationMs),
-                        SimpleDateFormat(
-                            "yyyy/MM/dd HH:mm:ss",
-                            Locale.JAPAN
-                        ).format(file?.lastModified() ?: 0)
-                    )
-                )
-            }
-        }
-    }
+    private lateinit var mBrowser: MediaBrowserCompat
+    private lateinit var mController: MediaControllerCompat
 
     @SuppressLint("StaticFieldLeak")
     private val context = getApplication<Application>().applicationContext
+    private val filePath = context.filesDir.path + '/' + audioId
 
     init {
-        loadAudio()
+        // loadAudio()
     }
 
     @dagger.assisted.AssistedFactory
@@ -88,65 +67,88 @@ class PlayerViewModel @AssistedInject constructor(application: Application, @Ass
         }
     }
 
-    private fun loadAudio() = viewModelScope.launch { //onCleared() のタイミングでキャンセルされる
+    fun loadAudio() = viewModelScope.launch { //onCleared() のタイミングでキャンセルされる
         try {
-            val files = context.filesDir.listFiles()?.filter { it.isFile && it.name.endsWith(".3gp") } ?: listOf<File>()
-            val filePath = context.filesDir.path + '/' + audioId
-            val file = File(filePath)
+            //サービスは開始しておく
+            //Activity破棄と同時にServiceも停止して良いならこれは不要
+            context.stopService(Intent(context, MusicService::class.java))
+            context.startService(Intent(context, MusicService::class.java))
 
-            player = SimpleExoPlayer.Builder(context).build().apply {
-                playWhenReady = playWhenReady
-            }
-            // プレイリスト作成
-            var findFlg = false
-            files.map{
-                player.addMediaItem(MediaItem.fromUri(it.absolutePath))
-                // 指定ファイルまでスキップする
-                if(!findFlg){
-                    player.next()
-                }
-                if(it.absolutePath.equals(filePath)){
-                    findFlg = true
-                }
-            }
-            player.addListener(playerEventListener)
+            //MediaBrowserを初期化
+            mBrowser = MediaBrowserCompat(context, ComponentName(context.applicationContext, MusicService::class.java), object : MediaBrowserCompat.ConnectionCallback() {
+                override fun onConnected() {
+                    try {
+                        //接続が完了するとSessionTokenが取得できるので
+                        //それを利用してMediaControllerを作成
+                        mController = MediaControllerCompat(context, mBrowser.sessionToken)
+                        //サービスから送られてくるプレイヤーの状態や曲の情報が変更された際のコールバックを設定
+                        mController.registerCallback(controllerCallback)
 
-            // 別スレッドで実行 コルーチン
-            val durationMs = withContext(Dispatchers.IO) {
-                getDurationMs(filePath)
-            }
-
-            // 再生しているデータを渡す
-            audioLiveData.postValue(
-                Audio(
-                    file.name,
-                    getDurationText(durationMs),
-                    SimpleDateFormat(
-                        "yyyy/MM/dd HH:mm:ss",
-                        Locale.JAPAN
-                    ).format(file.lastModified())
-                )
-            )
-            // 再生準備
-            player.prepare()
-            // 再生開始
-            player.play()
-
-            initPlayerLiveData.postValue(true)
-
-            // TODO: onPauseのタイミングでplayerのpauseを呼ぶとかする
+                        //既に再生中だった場合コールバックを自ら呼び出してUIを更新
+                        if (mController.playbackState != null && mController.playbackState.state == PlaybackStateCompat.STATE_PLAYING) {
+                            controllerCallback.onMetadataChanged(mController.metadata)
+                            controllerCallback.onPlaybackStateChanged(mController.playbackState)
+                        }
+                    } catch (ex: RemoteException) {
+                        ex.printStackTrace()
+                        Toast.makeText(context, ex.message, Toast.LENGTH_LONG).show()
+                    }
+                    //サービスから再生可能な曲のリストを取得
+                    mBrowser.subscribe(mBrowser.root, subscriptionCallback)
+                } }, null)
+            //接続(サービスをバインド)
+            mBrowser.connect()
 
         } catch (e: Exception) {
             Log.e("loadProject:Failed", e.stackTrace.toString())
         }
     }
 
-    fun setAudio(audio: Audio) {
-        this.audioLiveData.value = audio
+    private fun play(id: String) {
+        //MediaControllerからサービスへ操作を要求するためのTransportControlを取得する
+        //playFromMediaIdを呼び出すと、サービス側のMediaSessionのコールバック内のonPlayFromMediaIdが呼ばれる
+        mController.transportControls.playFromMediaId(id, null)
     }
 
-    fun getPlayer(): SimpleExoPlayer {
-        return player
+    //Subscribeした際に呼び出されるコールバック
+    private val subscriptionCallback: MediaBrowserCompat.SubscriptionCallback = object : MediaBrowserCompat.SubscriptionCallback() {
+        override fun onChildrenLoaded(parentId: String, children: List<MediaBrowserCompat.MediaItem>) {
+            //既に再生中でなければ初めの曲を再生をリクエスト
+            // if (mController.playbackState == null && children.isNotEmpty()) { play(filePath) }
+            play(filePath)
+        }
+    }
+
+    //MediaControllerのコールバック
+    private val controllerCallback: MediaControllerCompat.Callback = object : MediaControllerCompat.Callback() {
+        //再生中の曲の情報が変更された際に呼び出される
+        override fun onMetadataChanged(metadata: MediaMetadataCompat) {
+            // change UI
+            viewModelScope.launch {
+                val file = File(filePath)
+                // 別スレッドで実行 コルーチン
+                val durationMs = withContext(Dispatchers.IO) {
+                    getDurationMs(filePath)
+                }
+                // 再生しているデータを渡す
+                audioLiveData.postValue(
+                        Audio(
+                                file.name,
+                                file.absolutePath,
+                                getDurationText(durationMs),
+                                SimpleDateFormat(
+                                        "yyyy/MM/dd HH:mm:ss",
+                                        Locale.JAPAN
+                                ).format(file.lastModified())
+                        )
+                )
+            }
+        }
+
+        //プレイヤーの状態が変更された時に呼び出される
+        override fun onPlaybackStateChanged(state: PlaybackStateCompat) {
+            // TODO: change UI
+        }
     }
 
     private fun getDurationText(ms: Long): String {
@@ -162,5 +164,4 @@ class PlayerViewModel @AssistedInject constructor(application: Application, @Ass
         mmr.setDataSource(filePath)
         return mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLong() ?: 0
     }
-
 }
