@@ -53,13 +53,11 @@ class PlayerFragment : Fragment() {
     }
 
     private lateinit var binding: PlayerFragmentBinding
-    private lateinit var playerView: PlayerView
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
                               savedInstanceState: Bundle?): View {
         binding = DataBindingUtil.inflate(inflater, R.layout.player_fragment, container, false)
         binding.lifecycleOwner = viewLifecycleOwner
-        playerView = binding.root.findViewById(R.id.videoView)
         return binding.root
     }
 
