@@ -112,6 +112,28 @@ class PlayerViewModel @AssistedInject constructor(application: Application, @Ass
         }
     }
 
+    fun toPreviousSound(){
+        mController?.transportControls?.skipToPrevious()
+    }
+
+    fun toNextSound() {
+        mController?.transportControls?.skipToNext()
+    }
+
+    fun toForward() {
+        mController?.let {
+            // 10秒後に移動
+            it.transportControls.seekTo(it.playbackState.position + 10 * 1000)
+        }
+    }
+
+    fun toRewind() {
+        mController?.let {
+            // 10秒前に移動
+            it.transportControls.seekTo(it.playbackState.position - 10 * 1000)
+        }
+    }
+
     fun unsubscribe() {
         mController?.unregisterCallback(controllerCallback)
     }

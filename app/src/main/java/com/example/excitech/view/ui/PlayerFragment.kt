@@ -53,16 +53,28 @@ class PlayerFragment : Fragment() {
         binding = DataBindingUtil.inflate(inflater, R.layout.player_fragment, container, false)
         binding.lifecycleOwner = viewLifecycleOwner
 
+        // UIの動作設定
         seekBar = binding.root.findViewById(R.id.seekBar)
         playPauseButton = binding.root.findViewById(R.id.playPause)
         playPauseButton.setOnClickListener {
             viewModel.startOrStopPlaying()
         }
         previousButton = binding.root.findViewById(R.id.previous)
+        previousButton.setOnClickListener {
+            viewModel.toPreviousSound()
+        }
         nextButton = binding.root.findViewById(R.id.next)
+        nextButton.setOnClickListener {
+            viewModel.toNextSound()
+        }
         forwardButton = binding.root.findViewById(R.id.forward)
+        forwardButton.setOnClickListener {
+            viewModel.toForward()
+        }
         rewindButton = binding.root.findViewById(R.id.rewind)
-
+        rewindButton.setOnClickListener {
+            viewModel.toRewind()
+        }
         seekBar.progress = 0
         return binding.root
     }
