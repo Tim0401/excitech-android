@@ -39,8 +39,7 @@ class AudioListViewModel @Inject constructor(application: Application) : Android
                 val s = duration - (h * 3600 + m * 60)
                 val durationText = "%02d:%02d:%02d".format(h, m, s)
 
-
-                Audio(it.name, it.absolutePath, durationText, SimpleDateFormat("yyyy/MM/dd HH:mm:ss", Locale.JAPAN).format(it.lastModified()))
+                Audio(it.name, it.absolutePath, durationMs, durationText, SimpleDateFormat("yyyy/MM/dd HH:mm:ss", Locale.JAPAN).format(it.lastModified()))
             }
             audioListLiveData.postValue(audioList)
         } catch (e: Exception){

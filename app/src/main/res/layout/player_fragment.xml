@@ -71,43 +71,43 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginBottom="32dp"
-            app:layout_constraintBottom_toTopOf="@+id/textView2"
+            app:layout_constraintBottom_toTopOf="@+id/currentTime"
             app:layout_constraintEnd_toStartOf="@+id/rewind"
             app:layout_constraintHorizontal_bias="0.5"
             app:layout_constraintStart_toStartOf="parent"
             app:srcCompat="@drawable/exo_controls_previous" />
 
         <TextView
-            android:id="@+id/textView2"
+            android:id="@+id/currentTime"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
-            android:text="TextView"
-            app:layout_constraintBottom_toBottomOf="@+id/seekBar4"
+            android:text="@{playerViewModel.currentTimeLiveData}"
+            app:layout_constraintBottom_toBottomOf="@+id/seekBar"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="@+id/seekBar4"
+            app:layout_constraintTop_toTopOf="@+id/seekBar"
             app:layout_constraintVertical_bias="0.0" />
 
         <TextView
-            android:id="@+id/textView3"
+            android:id="@+id/totalTime"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginEnd="16dp"
             android:layout_marginBottom="32dp"
-            android:text="TextView"
+            android:text="@{playerViewModel.audioLiveData.durationText}"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
 
         <SeekBar
-            android:id="@+id/seekBar4"
+            android:id="@+id/seekBar"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:layout_marginEnd="8dp"
-            app:layout_constraintBottom_toBottomOf="@+id/textView3"
-            app:layout_constraintEnd_toStartOf="@+id/textView3"
-            app:layout_constraintStart_toEndOf="@+id/textView2"
-            app:layout_constraintTop_toTopOf="@+id/textView3" />
+            app:layout_constraintBottom_toBottomOf="@+id/totalTime"
+            app:layout_constraintEnd_toStartOf="@+id/totalTime"
+            app:layout_constraintStart_toEndOf="@+id/currentTime"
+            app:layout_constraintTop_toTopOf="@+id/totalTime" />
 
 
     </androidx.constraintlayout.widget.ConstraintLayout>

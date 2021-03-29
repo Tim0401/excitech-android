@@ -5,6 +5,7 @@ import android.app.Application
 import android.content.ComponentName
 import android.content.Intent
 import android.media.MediaMetadataRetriever
+import android.media.session.PlaybackState
 import android.os.RemoteException
 import android.support.v4.media.MediaBrowserCompat
 import android.support.v4.media.MediaMetadataCompat
@@ -12,19 +13,9 @@ import android.support.v4.media.session.MediaControllerCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import android.util.Log
 import android.widget.Toast
-import androidx.annotation.Nullable
-import androidx.databinding.ObservableField
 import androidx.lifecycle.*
 import com.example.excitech.service.MusicService
 import com.example.excitech.service.model.Audio
-import com.google.android.exoplayer2.ExoPlaybackException
-import com.google.android.exoplayer2.MediaItem
-import com.google.android.exoplayer2.Player
-import com.google.android.exoplayer2.Player.MediaItemTransitionReason
-import com.google.android.exoplayer2.SimpleExoPlayer
-import com.google.android.exoplayer2.source.MediaSource
-import com.google.android.exoplayer2.source.ProgressiveMediaSource
-import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.Dispatchers
@@ -38,16 +29,19 @@ import java.util.*
 class PlayerViewModel @AssistedInject constructor(application: Application, @Assisted private val audioId: String) : AndroidViewModel(application) {
     // シリアライズ可能
     val audioLiveData: MutableLiveData<Audio> = MutableLiveData()
-
-    private lateinit var mBrowser: MediaBrowserCompat
-    private lateinit var mController: MediaControllerCompat
+    val currentTimeLiveData: MutableLiveData<String> = MutableLiveData("00:00:00")
+    val currentTimeMsLiveData: MutableLiveData<Int> = MutableLiveData(0)
+    val isPlayingLiveData: MutableLiveData<Boolean> = MutableLiveData(false)
 
     @SuppressLint("StaticFieldLeak")
     private val context = getApplication<Application>().applicationContext
     private val filePath = context.filesDir.path + '/' + audioId
 
+    private lateinit var mBrowser: MediaBrowserCompat
+    private var mController: MediaControllerCompat? = null
+
     init {
-        // loadAudio()
+        initAudio()
     }
 
     @dagger.assisted.AssistedFactory
@@ -67,27 +61,25 @@ class PlayerViewModel @AssistedInject constructor(application: Application, @Ass
         }
     }
 
-    fun loadAudio() = viewModelScope.launch { //onCleared() のタイミングでキャンセルされる
+    private fun initAudio() {
         try {
-            //サービスは開始しておく
-            //Activity破棄と同時にServiceも停止して良いならこれは不要
-            context.stopService(Intent(context, MusicService::class.java))
-            context.startService(Intent(context, MusicService::class.java))
-
             //MediaBrowserを初期化
-            mBrowser = MediaBrowserCompat(context, ComponentName(context.applicationContext, MusicService::class.java), object : MediaBrowserCompat.ConnectionCallback() {
+            mBrowser = MediaBrowserCompat(context, ComponentName(context, MusicService::class.java), object : MediaBrowserCompat.ConnectionCallback() {
                 override fun onConnected() {
                     try {
                         //接続が完了するとSessionTokenが取得できるので
                         //それを利用してMediaControllerを作成
                         mController = MediaControllerCompat(context, mBrowser.sessionToken)
-                        //サービスから送られてくるプレイヤーの状態や曲の情報が変更された際のコールバックを設定
-                        mController.registerCallback(controllerCallback)
 
-                        //既に再生中だった場合コールバックを自ら呼び出してUIを更新
-                        if (mController.playbackState != null && mController.playbackState.state == PlaybackStateCompat.STATE_PLAYING) {
-                            controllerCallback.onMetadataChanged(mController.metadata)
-                            controllerCallback.onPlaybackStateChanged(mController.playbackState)
+                        mController?.let {
+                            //サービスから送られてくるプレイヤーの状態や曲の情報が変更された際のコールバックを設定
+                            it.registerCallback(controllerCallback)
+
+                            //既に再生中だった場合コールバックを自ら呼び出してUIを更新
+                            if (it.playbackState != null && it.playbackState.state == PlaybackStateCompat.STATE_PLAYING) {
+                                controllerCallback.onMetadataChanged(it.metadata)
+                                controllerCallback.onPlaybackStateChanged(it.playbackState)
+                            }
                         }
                     } catch (ex: RemoteException) {
                         ex.printStackTrace()
@@ -104,10 +96,24 @@ class PlayerViewModel @AssistedInject constructor(application: Application, @Ass
         }
     }
 
+    fun loadAudio() = viewModelScope.launch {
+        //サービスは開始しておく
+        //Activity破棄と同時にServiceも停止して良いならこれは不要
+        context.startService(Intent(context, MusicService::class.java))
+    }
+
+    fun unsubscribe() {
+        mController?.unregisterCallback(controllerCallback)
+    }
+
+    fun subscribe() {
+        mController?.registerCallback(controllerCallback)
+    }
+
     private fun play(id: String) {
         //MediaControllerからサービスへ操作を要求するためのTransportControlを取得する
         //playFromMediaIdを呼び出すと、サービス側のMediaSessionのコールバック内のonPlayFromMediaIdが呼ばれる
-        mController.transportControls.playFromMediaId(id, null)
+        mController?.transportControls?.playFromMediaId(id, null)
     }
 
     //Subscribeした際に呼び出されるコールバック
@@ -136,6 +142,7 @@ class PlayerViewModel @AssistedInject constructor(application: Application, @Ass
                             Audio(
                                     file.name,
                                     file.absolutePath,
+                                    durationMs,
                                     getDurationText(durationMs),
                                     SimpleDateFormat(
                                             "yyyy/MM/dd HH:mm:ss",
@@ -149,7 +156,9 @@ class PlayerViewModel @AssistedInject constructor(application: Application, @Ass
 
         //プレイヤーの状態が変更された時に呼び出される
         override fun onPlaybackStateChanged(state: PlaybackStateCompat) {
-            // TODO: change UI
+            currentTimeLiveData.postValue(getDurationText(state.position))
+            currentTimeMsLiveData.postValue(state.position.toInt())
+            isPlayingLiveData.postValue(state.state == PlaybackState.STATE_PLAYING)
         }
     }
 

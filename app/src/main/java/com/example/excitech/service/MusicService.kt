@@ -155,12 +155,12 @@ class MusicService : MediaBrowserServiceCompat() {
         handler!!.postDelayed(object : Runnable {
             override fun run() {
                 //再生中にアップデート
-                if (exoPlayer.getPlaybackState() == Player.STATE_READY && exoPlayer.getPlayWhenReady()) updatePlaybackState()
+                if (exoPlayer.playbackState == Player.STATE_READY && exoPlayer.playWhenReady) updatePlaybackState()
 
                 //再度実行
-                handler!!.postDelayed(this, 500)
+                handler!!.postDelayed(this, 100)
             }
-        }, 500)
+        }, 100)
     }
 
     //MediaSession用コールバック
@@ -265,7 +265,10 @@ class MusicService : MediaBrowserServiceCompat() {
             Player.STATE_IDLE -> state = PlaybackStateCompat.STATE_NONE
             Player.STATE_BUFFERING -> state = PlaybackStateCompat.STATE_BUFFERING
             Player.STATE_READY -> state = if (exoPlayer.playWhenReady) PlaybackStateCompat.STATE_PLAYING else PlaybackStateCompat.STATE_PAUSED
-            Player.STATE_ENDED -> state = PlaybackStateCompat.STATE_STOPPED
+            Player.STATE_ENDED -> {
+                state = PlaybackStateCompat.STATE_STOPPED
+                mSession.controller.transportControls.skipToNext()
+            }
         }
 
         //プレイヤーの情報、現在の再生位置などを設定する

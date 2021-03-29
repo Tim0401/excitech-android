@@ -1,29 +1,17 @@
 package com.example.excitech.view.ui
 
-import android.app.Application
-import android.content.ComponentName
-import android.content.Intent
-import androidx.lifecycle.ViewModelProvider
 import android.os.Bundle
-import android.os.RemoteException
-import android.support.v4.media.MediaBrowserCompat
-import android.support.v4.media.MediaMetadataCompat
-import android.support.v4.media.session.MediaControllerCompat
-import android.support.v4.media.session.PlaybackStateCompat
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
+import android.widget.ImageButton
+import android.widget.SeekBar
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.Observer
 import com.example.excitech.R
 import com.example.excitech.databinding.PlayerFragmentBinding
-import com.example.excitech.service.MusicService
 import com.example.excitech.viewModel.PlayerViewModel
-import com.example.excitech.viewModel.RecordViewModel
-import com.google.android.exoplayer2.ui.PlayerView
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -53,11 +41,16 @@ class PlayerFragment : Fragment() {
     }
 
     private lateinit var binding: PlayerFragmentBinding
+    private lateinit var seekBar: SeekBar
+    private lateinit var playPauseButton: ImageButton
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
                               savedInstanceState: Bundle?): View {
         binding = DataBindingUtil.inflate(inflater, R.layout.player_fragment, container, false)
         binding.lifecycleOwner = viewLifecycleOwner
+        seekBar = binding.root.findViewById(R.id.seekBar)
+        playPauseButton = binding.root.findViewById(R.id.playPause)
+        seekBar.progress = 0
         return binding.root
     }
 
@@ -67,8 +60,37 @@ class PlayerFragment : Fragment() {
         binding.apply {
             playerViewModel = viewModel
         }
+        // 現在の再生位置
         viewModel.audioLiveData.observe(viewLifecycleOwner, { audio ->
-            audio?.let {}
+            audio?.let {
+                seekBar.max = audio.durationMs.toInt()
+            }
         })
+        // シークバーの位置調整
+        viewModel.currentTimeMsLiveData.observe(viewLifecycleOwner, { ms ->
+            ms?.let {
+                seekBar.progress = ms
+            }
+        })
+        // 再生ボタンの表示切り替え
+        viewModel.isPlayingLiveData.observe(viewLifecycleOwner, { isPlaying ->
+            isPlaying?.let {
+                if (isPlaying){
+                    playPauseButton.setImageResource(R.drawable.exo_ic_pause_circle_filled)
+                } else {
+                    playPauseButton.setImageResource(R.drawable.exo_ic_play_circle_filled)
+                }
+            }
+        })
+    }
+
+    override fun onPause() {
+        super.onPause()
+        viewModel.unsubscribe()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        viewModel.subscribe()
     }
 }
