@@ -43,13 +43,26 @@ class PlayerFragment : Fragment() {
     private lateinit var binding: PlayerFragmentBinding
     private lateinit var seekBar: SeekBar
     private lateinit var playPauseButton: ImageButton
+    private lateinit var previousButton: ImageButton
+    private lateinit var nextButton: ImageButton
+    private lateinit var forwardButton: ImageButton
+    private lateinit var rewindButton: ImageButton
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
                               savedInstanceState: Bundle?): View {
         binding = DataBindingUtil.inflate(inflater, R.layout.player_fragment, container, false)
         binding.lifecycleOwner = viewLifecycleOwner
+
         seekBar = binding.root.findViewById(R.id.seekBar)
         playPauseButton = binding.root.findViewById(R.id.playPause)
+        playPauseButton.setOnClickListener {
+            viewModel.startOrStopPlaying()
+        }
+        previousButton = binding.root.findViewById(R.id.previous)
+        nextButton = binding.root.findViewById(R.id.next)
+        forwardButton = binding.root.findViewById(R.id.forward)
+        rewindButton = binding.root.findViewById(R.id.rewind)
+
         seekBar.progress = 0
         return binding.root
     }

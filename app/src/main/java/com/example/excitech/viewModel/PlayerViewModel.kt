@@ -102,6 +102,16 @@ class PlayerViewModel @AssistedInject constructor(application: Application, @Ass
         context.startService(Intent(context, MusicService::class.java))
     }
 
+    fun startOrStopPlaying(){
+        if(isPlayingLiveData.value == true){
+            mController?.transportControls?.pause()
+            isPlayingLiveData.postValue(false)
+        } else {
+            mController?.transportControls?.play()
+            isPlayingLiveData.postValue(true)
+        }
+    }
+
     fun unsubscribe() {
         mController?.unregisterCallback(controllerCallback)
     }
