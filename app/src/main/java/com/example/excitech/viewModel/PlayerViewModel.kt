@@ -39,6 +39,7 @@ class PlayerViewModel @AssistedInject constructor(application: Application, @Ass
 
     private lateinit var mBrowser: MediaBrowserCompat
     private var mController: MediaControllerCompat? = null
+    private var isPlaying = false
 
     init {
         initAudio()
@@ -131,6 +132,26 @@ class PlayerViewModel @AssistedInject constructor(application: Application, @Ass
         mController?.let {
             // 10秒前に移動
             it.transportControls.seekTo(it.playbackState.position - 10 * 1000)
+        }
+    }
+
+    // 再生位置を変更する
+    fun changePosition(progress: Int){
+        mController?.transportControls?.seekTo(progress.toLong())
+    }
+
+    // UIを変更せずに停止する
+    fun pauseWithStateHeld(){
+        isPlaying = isPlayingLiveData.value == true
+        mController?.transportControls?.pause()
+    }
+
+    // 元の再生状態に戻す
+    fun adjustPlaybackToState(){
+        if(isPlaying){
+            mController?.transportControls?.play()
+        } else {
+            mController?.transportControls?.pause()
         }
     }
 

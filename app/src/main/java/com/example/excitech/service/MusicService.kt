@@ -1,6 +1,5 @@
 package com.example.excitech.service
 
-import android.R
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -13,6 +12,7 @@ import android.media.MediaMetadata.*
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
+import android.os.Looper
 import android.support.v4.media.MediaBrowserCompat
 import android.support.v4.media.MediaDescriptionCompat
 import android.support.v4.media.MediaMetadataCompat
@@ -20,17 +20,14 @@ import android.support.v4.media.session.MediaControllerCompat
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import android.util.Log
-import android.util.Log.DEBUG
 import android.view.KeyEvent
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import androidx.media.MediaBrowserServiceCompat
 import androidx.media.session.MediaButtonReceiver
 import com.google.android.exoplayer2.*
-import com.google.android.exoplayer2.Player.DefaultEventListener
 import com.google.android.exoplayer2.source.MediaSource
 import com.google.android.exoplayer2.source.ProgressiveMediaSource
-import com.google.android.exoplayer2.trackselection.DefaultTrackSelector
 import com.google.android.exoplayer2.upstream.DataSource
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory
 import com.google.android.exoplayer2.util.Util
@@ -61,7 +58,7 @@ class MusicService : MediaBrowserServiceCompat() {
     var mediaItems: MutableList<MediaBrowserCompat.MediaItem> = ArrayList()
 
 
-    override fun onGetRoot(clientPackageName: String, clientUid: Int, rootHints: Bundle?): BrowserRoot? {
+    override fun onGetRoot(clientPackageName: String, clientUid: Int, rootHints: Bundle?): BrowserRoot {
         Log.d(TAG, "Connected from pkg:$clientPackageName uid:$clientUid")
         return BrowserRoot(ROOT_ID, null)
     }
@@ -72,7 +69,7 @@ class MusicService : MediaBrowserServiceCompat() {
         if (parentId == ROOT_ID) {
             result.sendResult(mediaItems)
         } else {
-            result.sendResult(ArrayList<MediaBrowserCompat.MediaItem>())
+            result.sendResult(ArrayList())
         }
     }
 
@@ -121,9 +118,7 @@ class MusicService : MediaBrowserServiceCompat() {
         //MediaSessionを初期化
         mSession = MediaSessionCompat(applicationContext, TAG)
         //このMediaSessionが提供する機能を設定
-        mSession.setFlags(MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS or  //ヘッドフォン等のボタンを扱う
-                MediaSessionCompat.FLAG_HANDLES_QUEUE_COMMANDS or  //キュー系のコマンドの使用をサポート
-                MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS) //再生、停止、スキップ等のコントロールを提供
+        mSession.setFlags(MediaSessionCompat.FLAG_HANDLES_QUEUE_COMMANDS) //再生、停止、スキップ等のコントロールを提供
 
         //クライアントからの操作に応じるコールバックを設定
         mSession.setCallback(callback)
@@ -150,7 +145,7 @@ class MusicService : MediaBrowserServiceCompat() {
         exoPlayer = SimpleExoPlayer.Builder(applicationContext).build()
         //プレイヤーのイベントリスナーを設定
         exoPlayer.addListener(eventListener)
-        handler = Handler()
+        handler = Handler(Looper.getMainLooper())
         //500msごとに再生情報を更新
         handler!!.postDelayed(object : Runnable {
             override fun run() {
@@ -182,8 +177,8 @@ class MusicService : MediaBrowserServiceCompat() {
 
             //MediaSessionが配信する、再生中の曲の情報を設定
             mSession.setMetadata(MediaMetadataCompat.Builder()
-                    .putString(android.media.MediaMetadata.METADATA_KEY_TITLE, mediaId)
-                    .putString(android.media.MediaMetadata.METADATA_KEY_ARTIST, mediaId)
+                    .putString(METADATA_KEY_TITLE, mediaId)
+                    .putString(METADATA_KEY_ARTIST, mediaId)
                     .putString(METADATA_KEY_MEDIA_ID, mediaId)
                     .build())
         }
@@ -250,7 +245,7 @@ class MusicService : MediaBrowserServiceCompat() {
     }
 
     //プレイヤーのコールバック
-    private val eventListener: Player.EventListener = object : DefaultEventListener() {
+    private val eventListener: Player.EventListener = object : Player.EventListener {
         //プレイヤーのステータスが変化した時に呼ばれる
         override fun onPlayerStateChanged(playWhenReady: Boolean, playbackState: Int) {
             updatePlaybackState()
@@ -305,7 +300,7 @@ class MusicService : MediaBrowserServiceCompat() {
                 .setDeleteIntent(MediaButtonReceiver.buildMediaButtonPendingIntent(this,
                         PlaybackStateCompat.ACTION_STOP)) // 通知の範囲をpublicにしてロック画面に表示されるようにする
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-                .setSmallIcon(R.drawable.ic_input_add) //通知の領域に使う色を設定
+                .setSmallIcon(android.R.drawable.ic_input_add) //通知の領域に使う色を設定
                 //Androidのバージョンによってスタイルが変わり、色が適用されない場合も多い
                 //.setColor(ContextCompat.getColor(this, R.color.colorAccent)) // Media Styleを利用する
                 .setStyle(androidx.media.app.NotificationCompat.MediaStyle()
@@ -323,24 +318,24 @@ class MusicService : MediaBrowserServiceCompat() {
 
         //通知のコントロールの設定
         builder.addAction(NotificationCompat.Action(
-                R.drawable.ic_media_previous, "prev",
+                android.R.drawable.ic_media_previous, "prev",
                 MediaButtonReceiver.buildMediaButtonPendingIntent(this@MusicService,
                         PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS)))
 
         //プレイヤーの状態で再生、一時停止のボタンを設定
         if (controller.playbackState.state == PlaybackStateCompat.STATE_PLAYING) {
             builder.addAction(NotificationCompat.Action(
-                    R.drawable.ic_media_pause, "pause",
+                    android.R.drawable.ic_media_pause, "pause",
                     MediaButtonReceiver.buildMediaButtonPendingIntent(this@MusicService,
                             PlaybackStateCompat.ACTION_PAUSE)))
         } else {
             builder.addAction(NotificationCompat.Action(
-                    R.drawable.ic_media_play, "play",
+                    android.R.drawable.ic_media_play, "play",
                     MediaButtonReceiver.buildMediaButtonPendingIntent(this@MusicService,
                             PlaybackStateCompat.ACTION_PLAY)))
         }
         builder.addAction(NotificationCompat.Action(
-                R.drawable.ic_media_next, "next",
+                android.R.drawable.ic_media_next, "next",
                 MediaButtonReceiver.buildMediaButtonPendingIntent(this@MusicService,
                         PlaybackStateCompat.ACTION_SKIP_TO_NEXT)))
 
@@ -353,17 +348,25 @@ class MusicService : MediaBrowserServiceCompat() {
     //オーディオフォーカスのコールバック
     var afChangeListener = OnAudioFocusChangeListener { focusChange ->
         //フォーカスを完全に失ったら
-        if (focusChange == AudioManager.AUDIOFOCUS_LOSS) {
-            //止める
-            mSession.controller.transportControls.pause()
-        } else if (focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) { //一時的なフォーカスロスト
-            //止める
-            mSession.controller.transportControls.pause()
-        } else if (focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK) { //通知音とかによるフォーカスロスト（ボリュームを下げて再生し続けるべき）
-            //本来なら音量を一時的に下げるべきだが何もしない
-        } else if (focusChange == AudioManager.AUDIOFOCUS_GAIN) { //フォーカスを再度得た場合
-            //再生
-            mSession.controller.transportControls.play()
+        when (focusChange) {
+            AudioManager.AUDIOFOCUS_LOSS -> {
+                //止める
+                mSession.controller.transportControls.pause()
+            }
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
+                //一時的なフォーカスロスト
+                //止める
+                mSession.controller.transportControls.pause()
+            }
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
+                //通知音とかによるフォーカスロスト（ボリュームを下げて再生し続けるべき）
+                //本来なら音量を一時的に下げるべきだが何もしない
+            }
+            AudioManager.AUDIOFOCUS_GAIN -> {
+                //フォーカスを再度得た場合
+                //再生
+                mSession.controller.transportControls.play()
+            }
         }
     }
 

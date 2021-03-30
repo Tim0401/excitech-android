@@ -1,13 +1,15 @@
 package com.example.excitech.view.ui
 
 import android.os.Bundle
-import androidx.fragment.app.Fragment
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.SeekBar
+import android.widget.SeekBar.OnSeekBarChangeListener
 import androidx.databinding.DataBindingUtil
+import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import com.example.excitech.R
 import com.example.excitech.databinding.PlayerFragmentBinding
@@ -55,6 +57,26 @@ class PlayerFragment : Fragment() {
 
         // UIの動作設定
         seekBar = binding.root.findViewById(R.id.seekBar)
+        seekBar.setOnSeekBarChangeListener(
+                object : OnSeekBarChangeListener {
+                    //ツマミがドラッグされると呼ばれる
+                    override fun onProgressChanged(
+                            seekBar: SeekBar, progress: Int, fromUser: Boolean) {
+                        if(fromUser){
+                            viewModel.changePosition(progress)
+                        }
+                    }
+
+                    //ツマミがタッチされた時に呼ばれる
+                    override fun onStartTrackingTouch(seekBar: SeekBar) {
+                        viewModel.pauseWithStateHeld()
+                    }
+
+                    //ツマミがリリースされた時に呼ばれる
+                    override fun onStopTrackingTouch(seekBar: SeekBar) {
+                        viewModel.adjustPlaybackToState()
+                    }
+                })
         playPauseButton = binding.root.findViewById(R.id.playPause)
         playPauseButton.setOnClickListener {
             viewModel.startOrStopPlaying()
@@ -100,7 +122,7 @@ class PlayerFragment : Fragment() {
         // 再生ボタンの表示切り替え
         viewModel.isPlayingLiveData.observe(viewLifecycleOwner, { isPlaying ->
             isPlaying?.let {
-                if (isPlaying){
+                if (isPlaying) {
                     playPauseButton.setImageResource(R.drawable.exo_ic_pause_circle_filled)
                 } else {
                     playPauseButton.setImageResource(R.drawable.exo_ic_play_circle_filled)
