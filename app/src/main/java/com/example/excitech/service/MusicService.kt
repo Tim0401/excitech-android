@@ -122,7 +122,7 @@ class MusicService : MediaBrowserServiceCompat() {
         //MediaSessionを初期化
         mSession = MediaSessionCompat(applicationContext, TAG)
         //このMediaSessionが提供する機能を設定
-        mSession.setFlags(MediaSessionCompat.FLAG_HANDLES_QUEUE_COMMANDS) //再生、停止、スキップ等のコントロールを提供
+        mSession.setFlags(MediaSessionCompat.FLAG_HANDLES_QUEUE_COMMANDS)
 
         //クライアントからの操作に応じるコールバックを設定
         mSession.setCallback(callback)
@@ -192,7 +192,7 @@ class MusicService : MediaBrowserServiceCompat() {
         override fun onPlay() {
             Log.d(TAG, "onPlay")
             //オーディオフォーカスを要求
-            var result = AudioManager.AUDIOFOCUS_REQUEST_GRANTED
+            val result: Int
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 result = am.requestAudioFocus(AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
                         .setAudioAttributes(
@@ -293,7 +293,7 @@ class MusicService : MediaBrowserServiceCompat() {
         //プレイヤーの情報、現在の再生位置などを設定する
         //また、MediaButtonIntentでできる操作を設定する
         mSession.setPlaybackState(PlaybackStateCompat.Builder()
-                .setActions(PlaybackStateCompat.ACTION_PLAY or PlaybackStateCompat.ACTION_PAUSE or PlaybackStateCompat.ACTION_SKIP_TO_NEXT or PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS)
+                .setActions(PlaybackStateCompat.ACTION_PLAY or PlaybackStateCompat.ACTION_PAUSE or PlaybackStateCompat.ACTION_PLAY_PAUSE or PlaybackStateCompat.ACTION_SKIP_TO_NEXT or PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS)
                 .setState(state, exoPlayer.currentPosition, exoPlayer.playbackParameters.speed)
                 .build())
     }
@@ -314,7 +314,7 @@ class MusicService : MediaBrowserServiceCompat() {
                     ""
                 }
 
-        val builder = NotificationCompat.Builder(this, channelId)
+        val builder = NotificationCompat.Builder(this@MusicService, channelId)
         builder //現在の曲の情報を設定
                 .setContentTitle(description.title)
                 .setContentText(description.subtitle)

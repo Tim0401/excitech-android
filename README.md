@@ -5,9 +5,9 @@ https://techbowl.co.jp/techtrain/missions/23
 
 ## TODO
 
-バッググラウンド再生  
-画面回転時の挙動確認  
-独自UI実装  
+API25でnotificationのメディアボタンが動作しない  
+->notificationとserviceの接続の問題？  
+API29では動作するので違いを調べる  
 
 ## 参考URL
 
