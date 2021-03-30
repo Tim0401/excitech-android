@@ -57,26 +57,7 @@ class PlayerFragment : Fragment() {
 
         // UIの動作設定
         seekBar = binding.root.findViewById(R.id.seekBar)
-        seekBar.setOnSeekBarChangeListener(
-                object : OnSeekBarChangeListener {
-                    //ツマミがドラッグされると呼ばれる
-                    override fun onProgressChanged(
-                            seekBar: SeekBar, progress: Int, fromUser: Boolean) {
-                        if(fromUser){
-                            viewModel.changePosition(progress)
-                        }
-                    }
-
-                    //ツマミがタッチされた時に呼ばれる
-                    override fun onStartTrackingTouch(seekBar: SeekBar) {
-                        viewModel.pauseWithStateHeld()
-                    }
-
-                    //ツマミがリリースされた時に呼ばれる
-                    override fun onStopTrackingTouch(seekBar: SeekBar) {
-                        viewModel.adjustPlaybackToState()
-                    }
-                })
+        seekBar.setOnSeekBarChangeListener(seekBarChangeListener)
         playPauseButton = binding.root.findViewById(R.id.playPause)
         playPauseButton.setOnClickListener {
             viewModel.startOrStopPlaying()
@@ -139,5 +120,24 @@ class PlayerFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         viewModel.subscribe()
+    }
+
+    private val seekBarChangeListener: OnSeekBarChangeListener = object : OnSeekBarChangeListener {
+        //ツマミがドラッグされると呼ばれる
+        override fun onProgressChanged(
+                seekBar: SeekBar, progress: Int, fromUser: Boolean) {
+            if(fromUser){
+                viewModel.changePosition(progress)
+            }
+        }
+        //ツマミがタッチされた時に呼ばれる
+        override fun onStartTrackingTouch(seekBar: SeekBar) {
+            viewModel.pauseWithStateHeld()
+        }
+
+        //ツマミがリリースされた時に呼ばれる
+        override fun onStopTrackingTouch(seekBar: SeekBar) {
+            viewModel.adjustPlaybackToState()
+        }
     }
 }

@@ -45,23 +45,6 @@ class PlayerViewModel @AssistedInject constructor(application: Application, @Ass
         initAudio()
     }
 
-    @dagger.assisted.AssistedFactory
-    interface AssistedFactory {
-        fun create(audioId: String): PlayerViewModel
-    }
-
-    companion object {
-        fun provideFactory(
-                assistedFactory: AssistedFactory,
-                audioId: String
-        ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
-            override fun <T : ViewModel?> create(modelClass: Class<T>): T {
-                @Suppress("UNCHECKED_CAST")
-                return assistedFactory.create(audioId) as T
-            }
-        }
-    }
-
     private fun initAudio() {
         try {
             //MediaBrowserを初期化
@@ -102,6 +85,11 @@ class PlayerViewModel @AssistedInject constructor(application: Application, @Ass
         //Activity破棄と同時にServiceも停止して良いならこれは不要
         context.startService(Intent(context, MusicService::class.java))
     }
+
+    /**
+     * player function
+     */
+    //region player function
 
     fun startOrStopPlaying(){
         if(isPlayingLiveData.value == true){
@@ -162,6 +150,8 @@ class PlayerViewModel @AssistedInject constructor(application: Application, @Ass
     fun subscribe() {
         mController?.registerCallback(controllerCallback)
     }
+
+    //endregion
 
     private fun play(id: String) {
         //MediaControllerからサービスへ操作を要求するためのTransportControlを取得する
@@ -227,5 +217,27 @@ class PlayerViewModel @AssistedInject constructor(application: Application, @Ass
         val mmr = MediaMetadataRetriever()
         mmr.setDataSource(filePath)
         return mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLong() ?: 0
+    }
+
+    /**
+     * inner Interface
+     */
+    @dagger.assisted.AssistedFactory
+    interface AssistedFactory {
+        fun create(audioId: String): PlayerViewModel
+    }
+    /**
+     * companion object
+     */
+    companion object {
+        fun provideFactory(
+                assistedFactory: AssistedFactory,
+                audioId: String
+        ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
+            override fun <T : ViewModel?> create(modelClass: Class<T>): T {
+                @Suppress("UNCHECKED_CAST")
+                return assistedFactory.create(audioId) as T
+            }
+        }
     }
 }

@@ -39,25 +39,27 @@ import java.io.File
 class MusicService : MediaBrowserServiceCompat() {
 
     //ログ用タグ
-    val TAG = MusicService::class.java.simpleName
+    private val TAG = MusicService::class.java.simpleName
 
     //クライアントに返すID onGetRoot / onLoadChildrenで使用
-    val ROOT_ID = "root"
+    private val ROOT_ID = "root"
 
     //定期的に処理を回すためのHandler
-    var handler: Handler? = null
+    private val handler: Handler by lazy {
+        Handler(Looper.getMainLooper())
+    }
 
-    lateinit var mSession: MediaSessionCompat
-    lateinit var am : AudioManager
+    private lateinit var mSession: MediaSessionCompat
+    private lateinit var am : AudioManager
 
-    var index = 0 //再生中のインデックス
+    private var index = 0 //再生中のインデックス
 
-    lateinit var exoPlayer: SimpleExoPlayer
+    private lateinit var exoPlayer: SimpleExoPlayer
 
     //キューに使用するリスト
-    var queueItems: MutableList<MediaSessionCompat.QueueItem> = ArrayList()
+    private var queueItems: MutableList<MediaSessionCompat.QueueItem> = ArrayList()
     // 再生リスト
-    var mediaItems: MutableList<MediaBrowserCompat.MediaItem> = ArrayList()
+    private var mediaItems: MutableList<MediaBrowserCompat.MediaItem> = ArrayList()
 
 
     override fun onGetRoot(clientPackageName: String, clientUid: Int, rootHints: Bundle?): BrowserRoot {
@@ -147,15 +149,16 @@ class MusicService : MediaBrowserServiceCompat() {
         exoPlayer = SimpleExoPlayer.Builder(applicationContext).build()
         //プレイヤーのイベントリスナーを設定
         exoPlayer.addListener(eventListener)
-        handler = Handler(Looper.getMainLooper())
         //500msごとに再生情報を更新
-        handler!!.postDelayed(object : Runnable {
+        handler.postDelayed(object : Runnable {
             override fun run() {
                 //再生中にアップデート
-                if (exoPlayer.playbackState == Player.STATE_READY && exoPlayer.playWhenReady) updatePlaybackState()
+                // if (exoPlayer.playbackState == Player.STATE_READY && exoPlayer.playWhenReady) updatePlaybackState()
+                // 再生中以外もアップデートをかける
+                updatePlaybackState()
 
                 //再度実行
-                handler!!.postDelayed(this, 100)
+                handler.postDelayed(this, 100)
             }
         }, 100)
     }
