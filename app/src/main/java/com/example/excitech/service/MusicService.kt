@@ -6,6 +6,8 @@ import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
+import android.media.AudioAttributes
+import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.media.AudioManager.OnAudioFocusChangeListener
 import android.media.MediaMetadata.*
@@ -73,7 +75,7 @@ class MusicService : MediaBrowserServiceCompat() {
         }
     }
 
-    private fun createMediaItems(files :List<File>) {
+    private fun createMediaItems(files: List<File>) {
         // 再生対象ファイルの読み込み
         // MediaItem配列の作成
         mediaItems = files.map{
@@ -185,8 +187,26 @@ class MusicService : MediaBrowserServiceCompat() {
 
         //再生をリクエストされたとき
         override fun onPlay() {
+            Log.d(TAG, "onPlay")
             //オーディオフォーカスを要求
-            if (am.requestAudioFocus(afChangeListener, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN) == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+            var result = AudioManager.AUDIOFOCUS_REQUEST_GRANTED
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                result = am.requestAudioFocus(AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+                        .setAudioAttributes(
+                                AudioAttributes.Builder()
+                                        .setUsage(AudioAttributes.USAGE_MEDIA)
+                                        .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                                        .build()
+                        )
+                        .setAcceptsDelayedFocusGain(true)
+                        .setOnAudioFocusChangeListener(afChangeListener).build()
+                )
+            } else {
+                @Suppress("DEPRECATION")
+                result = am.requestAudioFocus(afChangeListener, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN)
+            }
+
+            if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
                 //取得できたら再生を始める
                 mSession.isActive = true
                 exoPlayer.playWhenReady = true
@@ -195,6 +215,7 @@ class MusicService : MediaBrowserServiceCompat() {
 
         //一時停止をリクエストされたとき
         override fun onPause() {
+            Log.d(TAG, "onPause")
             exoPlayer.playWhenReady = false
             //オーディオフォーカスを開放
             am.abandonAudioFocus(afChangeListener)
@@ -269,7 +290,7 @@ class MusicService : MediaBrowserServiceCompat() {
         //プレイヤーの情報、現在の再生位置などを設定する
         //また、MediaButtonIntentでできる操作を設定する
         mSession.setPlaybackState(PlaybackStateCompat.Builder()
-                .setActions(PlaybackStateCompat.ACTION_PLAY or PlaybackStateCompat.ACTION_PAUSE or PlaybackStateCompat.ACTION_SKIP_TO_NEXT or PlaybackStateCompat.ACTION_STOP)
+                .setActions(PlaybackStateCompat.ACTION_PLAY or PlaybackStateCompat.ACTION_PAUSE or PlaybackStateCompat.ACTION_SKIP_TO_NEXT or PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS)
                 .setState(state, exoPlayer.currentPosition, exoPlayer.playbackParameters.speed)
                 .build())
     }
@@ -290,7 +311,7 @@ class MusicService : MediaBrowserServiceCompat() {
                     ""
                 }
 
-        val builder = NotificationCompat.Builder(this, channelId )
+        val builder = NotificationCompat.Builder(this, channelId)
         builder //現在の曲の情報を設定
                 .setContentTitle(description.title)
                 .setContentText(description.subtitle)
